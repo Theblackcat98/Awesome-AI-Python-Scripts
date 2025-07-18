@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+import google.generativeai.protos as protos
 
 class BaseTool(ABC):
     """
@@ -57,14 +58,27 @@ class BaseTool(ABC):
         """
         pass
 
-    def to_gemini_schema(self) -> Dict[str, Any]:
+    def to_gemini_schema(self) -> protos.FunctionDeclaration:
         """
-        Converts the tool instance into the Gemini API's function declaration format.
+        Converts the tool instance into the Gemini API's FunctionDeclaration format.
         This method is concrete because all tools will use the same structure
         based on their abstract properties.
         """
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters
+        # The parameters dictionary needs to be unpacked into the Schema constructor
+        schema_properties = self.parameters.get("properties", {})
+        
+        # Convert the properties dictionary into a map of Schema objects
+        proto_properties = {
+            key: protos.Schema(**value)
+            for key, value in schema_properties.items()
         }
+
+        return protos.FunctionDeclaration(
+            name=self.name,
+            description=self.description,
+            parameters=protos.Schema(
+                type=protos.Type.OBJECT,
+                properties=proto_properties,
+                required=self.parameters.get("required", [])
+            )
+        )

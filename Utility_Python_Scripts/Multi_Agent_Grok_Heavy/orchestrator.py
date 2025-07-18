@@ -1,7 +1,6 @@
 import json
 import yaml
 import time
-import traceback
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional
@@ -108,13 +107,11 @@ class TaskOrchestrator:
             }
             
         except Exception as e:
-            error_details = traceback.format_exc()
-            print(f"DEBUG: Agent {agent_id} failed with error:\n{error_details}")
-            # More detailed error handling
+            # Simple error handling
             return {
                 "agent_id": agent_id,
                 "status": "error",
-                "response": f"Error: {str(e)}\nTraceback:\n{error_details}",
+                "response": f"Error: {str(e)}",
                 "execution_time": 0
             }
     
