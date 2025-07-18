@@ -66,5 +66,5 @@ class BaseTool(ABC):
         return {
             "name": self.name,
             "description": self.description,
-            "parameters_schema": self.parameters
+            "parameters": self.parameters
         }
