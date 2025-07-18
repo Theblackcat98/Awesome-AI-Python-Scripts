@@ -1,4 +1,5 @@
 import json
+from google.protobuf import json_format
 import yaml
 import google.generativeai as genai
 from tools import discover_tools
@@ -87,7 +88,11 @@ class GeminiAgent:
             response = self.call_gemini_llm(messages)
             
             assistant_message = response.candidates[0].content
-            messages.append(assistant_message)
+            # The 'assistant_message' is a 'Content' object, which is not a dict.
+            # To maintain a homogeneous list of dicts for 'messages', we convert it.
+            # The 'Content' object wraps a protobuf message. We access it via '_pb'
+            # and use 'MessageToDict' to convert it to a dictionary.
+            messages.append(json_format.MessageToDict(assistant_message._pb))
             
             text_parts = [part.text for part in assistant_message.parts if hasattr(part, 'text')]
             if any(text_parts):
