@@ -104,9 +104,9 @@ class SearchTool(BaseTool):
             return {"success": False, "error": "Search query cannot be empty."}
         if not isinstance(max_results, int) or max_results <= 0:
             return {"success": False, "error": "max_results must be a positive integer."}
-        # Enforce the maximum specified in parameters to prevent abuse
-        if max_results > self.parameters['properties']['max_results']['maximum']:
-            return {"success": False, "error": f"max_results cannot exceed {self.parameters['properties']['max_results']['maximum']}."}
+        # Enforce a reasonable maximum to prevent abuse
+        if max_results > 20:
+            return {"success": False, "error": "max_results cannot exceed 20."}
 
         try:
             # Perform the DuckDuckGo search

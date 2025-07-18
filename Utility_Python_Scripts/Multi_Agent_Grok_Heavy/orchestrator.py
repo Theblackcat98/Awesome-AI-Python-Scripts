@@ -35,9 +35,9 @@ class TaskOrchestrator:
             num_agents=num_agents
         )
         
-        # Remove task completion tool to avoid issues
-        question_agent.tools = [tool for tool in question_agent.tools if tool.get('function', {}).get('name') != 'mark_task_complete']
-        question_agent.tool_mapping = {name: func for name, func in question_agent.tool_mapping.items() if name != 'mark_task_complete'}
+        # Remove all tools from the question agent
+        question_agent.tools = []
+        question_agent.tool_mapping = {}
         
         print(f"DEBUG: Generation Prompt: {generation_prompt}")
         try:

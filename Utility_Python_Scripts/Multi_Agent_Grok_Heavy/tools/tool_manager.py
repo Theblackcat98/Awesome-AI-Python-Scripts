@@ -1,14 +1,20 @@
 from typing import Dict, List, Any, Type
 from .base_tool import BaseTool
+from .base_tool import BaseTool
 from .calculator_tool import CalculatorTool
 from .read_file_tool import ReadFileTool
+from .search_tool import SearchTool
+from .task_done_tool import TaskDoneTool
+from .write_file_tool import WriteFileTool
+
+from typing import Dict, List, Any, Type, Optional
 
 class ToolManager:
     """
     Manages all available tools, providing methods to register them,
     generate Gemini API schemas, and execute tools by name.
     """
-    def __init__(self, tool_configs: Dict[str, Dict[str, Any]] = None):
+    def __init__(self, tool_configs: Optional[Dict[str, Dict[str, Any]]] = None):
         """
         Initializes the ToolManager and registers default tools.
         Args:
@@ -25,8 +31,9 @@ class ToolManager:
         # You could also pass a list of Tool *classes* and instantiate them here.
         self.register_tool(CalculatorTool(tool_configs.get("calculator", {})))
         self.register_tool(ReadFileTool(tool_configs.get("read_file", {})))
-        # Add other tools as you develop them:
-        # self.register_tool(NewToolClass(tool_configs.get("new_tool", {})))
+        self.register_tool(SearchTool(tool_configs.get("search_web", {})))
+        self.register_tool(TaskDoneTool(tool_configs.get("mark_task_complete", {})))
+        self.register_tool(WriteFileTool(tool_configs.get("write_file", {})))
 
     def register_tool(self, tool_instance: BaseTool):
         """
