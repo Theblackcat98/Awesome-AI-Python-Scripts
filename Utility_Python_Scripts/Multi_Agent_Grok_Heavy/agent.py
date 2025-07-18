@@ -42,6 +42,7 @@ class GeminiAgent:
         Initializes a chat session and runs the agent loop.
         If json_mode is True, it configures the model for JSON output.
         """
+        print(f"DEBUG: GeminiAgent.run called with user_input: {user_input[:100]}...")
         client = genai.GenerativeModel(
             self.config['gemini']['model'],
             tools=self.tools,
@@ -64,7 +65,20 @@ class GeminiAgent:
 
         # If in JSON mode, we expect a direct answer without tool calls
         if json_mode:
-            return response.text
+            print(f"DEBUG: Gemini API raw response (json_mode): {response}")
+            print(f"DEBUG: Gemini API text response (json_mode): {response.text}")
+            # The response text is expected to be a JSON string.
+            # We'll load it to ensure it's valid, then dump it back to a string to return.
+            # This validates the output and ensures consistent string formatting.
+            try:
+                final_json_output = json.loads(response.text)
+                json_output_str = json.dumps(final_json_output)
+                print(f"DEBUG: Returning JSON output: {json_output_str}")
+                return json_output_str
+            except json.JSONDecodeError:
+                # If it's not valid JSON, return the raw text and let the caller handle it.
+                print(f"DEBUG: Failed to decode JSON from response. Returning raw text.")
+                return response.text
 
         full_response_content = []
         max_iterations = self.config.get('agent', {}).get('max_iterations', 10)

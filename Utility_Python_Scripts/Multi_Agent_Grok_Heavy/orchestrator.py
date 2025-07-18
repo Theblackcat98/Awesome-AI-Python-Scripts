@@ -39,20 +39,29 @@ class TaskOrchestrator:
         question_agent.tools = [tool for tool in question_agent.tools if tool.get('function', {}).get('name') != 'mark_task_complete']
         question_agent.tool_mapping = {name: func for name, func in question_agent.tool_mapping.items() if name != 'mark_task_complete'}
         
+        print(f"DEBUG: Generation Prompt: {generation_prompt}")
         try:
             # Get AI-generated questions in JSON mode
             response = question_agent.run(generation_prompt, json_mode=True)
+            print(f"DEBUG: Raw response from question_agent: {response}")
             
             # The response should be a valid JSON string, so we can parse it directly
-            questions = json.loads(response.strip())
+            stripped_response = response.strip()
+            print(f"DEBUG: Stripped response for json.loads: {stripped_response}")
+            questions = json.loads(stripped_response)
             
             # Validate we got the right number of questions
             if len(questions) != num_agents:
                 raise ValueError(f"Expected {num_agents} questions, got {len(questions)}")
             
             return questions
+        
+        except json.JSONDecodeError as e:
+            print(f"DEBUG: JSONDecodeError: {e}")
+            print(f"DEBUG: Problematic response: {response}")
+            raise
             
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
+        except (ValueError, TypeError) as e:
             # Fallback: create simple variations if AI fails
             if not self.silent:
                 print(f"⚠️ AI question generation failed: {e}. Using fallback questions.")
@@ -80,10 +89,12 @@ class TaskOrchestrator:
             self.update_agent_progress(agent_id, "PROCESSING...")
             
             # Use simple agent like in main.py
+            print(f"DEBUG: Subtask for agent {agent_id}: {subtask}")
             agent = GeminiAgent(silent=True)
             
             start_time = time.time()
             response = agent.run(subtask)
+            print(f"DEBUG: Response from agent {agent_id}: {response}")
             execution_time = time.time() - start_time
             
             self.update_agent_progress(agent_id, "COMPLETED", response)
