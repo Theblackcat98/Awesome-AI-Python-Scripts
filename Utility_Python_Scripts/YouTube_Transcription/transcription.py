@@ -56,7 +56,10 @@ def transcribe_audio(audio_file):
         "whisper",
         audio_file,
         "--device", device,
-        "--model", "large-v3",
+        "--model", "turbo",
+        "--language", "en",
+        "--task", "transcribe",
+        "--output_format", "txt",
         "--word_timestamps", "True"
     ]
     result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8')
