@@ -93,7 +93,7 @@ class GeminiAgent:
             if text_parts:
                 full_response_content.append(" ".join(text_parts))
 
-            tool_call_parts = [part for part in assistant_message.parts if part.function_call.name]
+            tool_call_parts = [part for part in assistant_message.parts if part.function_call]
 
             if not tool_call_parts:
                 if not self.silent:

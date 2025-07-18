@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
+from google.generativeai.types import FunctionDeclaration
 
 class BaseTool(ABC):
     """Base class for all tools"""
@@ -27,10 +28,10 @@ class BaseTool(ABC):
         """Execute the tool with given parameters"""
         pass
     
-    def to_gemini_schema(self) -> Dict[str, Any]:
+    def to_gemini_schema(self) -> FunctionDeclaration:
         """Convert tool to Gemini function schema"""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters
-        }
+        return FunctionDeclaration(
+            name=self.name,
+            description=self.description,
+            parameters=self.parameters,
+        )
