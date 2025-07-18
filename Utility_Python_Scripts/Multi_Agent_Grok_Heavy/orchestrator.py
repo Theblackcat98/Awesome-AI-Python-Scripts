@@ -43,8 +43,8 @@ class TaskOrchestrator:
             # Get AI-generated questions in JSON mode
             response = question_agent.run(generation_prompt, json_mode=True)
             
-            # Parse JSON response
-            questions = json.loads(response)
+            # The response should be a valid JSON string, so we can parse it directly
+            questions = json.loads(response.strip())
             
             # Validate we got the right number of questions
             if len(questions) != num_agents:
@@ -52,8 +52,11 @@ class TaskOrchestrator:
             
             return questions
             
-        except (json.JSONDecodeError, ValueError) as e:
+        except (json.JSONDecodeError, ValueError, TypeError) as e:
             # Fallback: create simple variations if AI fails
+            if not self.silent:
+                print(f"⚠️ AI question generation failed: {e}. Using fallback questions.")
+            
             return [
                 f"Research comprehensive information about: {user_input}",
                 f"Analyze and provide insights about: {user_input}",

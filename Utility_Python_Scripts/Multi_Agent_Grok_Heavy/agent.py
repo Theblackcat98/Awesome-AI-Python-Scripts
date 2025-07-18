@@ -25,6 +25,7 @@ class GeminiAgent:
             else:
                 tool_result = {"error": f"Unknown tool: {tool_name}"}
             
+            # Ensure the tool output is always JSON serializable
             try:
                 json.dumps(tool_result)
             except (TypeError, OverflowError) as e:
@@ -33,12 +34,13 @@ class GeminiAgent:
             return {"function_response": {"name": tool_name, "response": tool_result}}
         
         except Exception as e:
+            # Broad exception for any failure during tool execution
             return {"function_response": {"name": tool_name, "response": {"error": f"Tool execution failed: {str(e)}"}}}
 
     def run(self, user_input: str, json_mode: bool = False):
         """
         Initializes a chat session and runs the agent loop.
-        If json_mode is True, it will attempt to extract a JSON object from the final response.
+        If json_mode is True, it configures the model for JSON output.
         """
         client = genai.GenerativeModel(
             self.config['gemini']['model'],
@@ -49,9 +51,20 @@ class GeminiAgent:
         chat = client.start_chat()
         
         try:
-            response = chat.send_message(user_input)
+            if json_mode:
+                # Use generation_config to enforce JSON output
+                response = chat.send_message(
+                    user_input,
+                    generation_config=genai.types.GenerationConfig(response_mime_type="application/json")
+                )
+            else:
+                response = chat.send_message(user_input)
         except Exception as e:
             raise Exception(f"Initial LLM call failed: {e}")
+
+        # If in JSON mode, we expect a direct answer without tool calls
+        if json_mode:
+            return response.text
 
         full_response_content = []
         max_iterations = self.config.get('agent', {}).get('max_iterations', 10)
@@ -71,17 +84,7 @@ class GeminiAgent:
             if not tool_call_parts:
                 if not self.silent:
                     print("💭 Agent responded without tool calls. Task may be complete.")
-                
-                final_response = "\n\n".join(full_response_content)
-                if json_mode:
-                    try:
-                        # Find the JSON block and extract it
-                        json_block = final_response[final_response.find('```json\n') + 8 : final_response.rfind('\n```')]
-                        return json_block.strip()
-                    except Exception:
-                        # Fallback if JSON extraction fails
-                        return final_response
-                return final_response
+                return "\n\n".join(full_response_content)
 
             if not self.silent:
                 print(f"🔧 Agent making {len(tool_call_parts)} tool call(s)")
@@ -106,7 +109,7 @@ class GeminiAgent:
 
             try:
                 response = chat.send_message(
-                    {'role': 'function', 'parts': tool_response_parts}
+                    tool_response_parts
                 )
             except Exception as e:
                 raise Exception(f"LLM call with tool response failed: {e}")
