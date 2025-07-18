@@ -117,7 +117,7 @@ class GeminiAgent:
                 tool_result_part = self.handle_tool_call(tool_call_part)
                 tool_response_parts.append(tool_result_part)
                 
-                if tool_name == "mark_task_complete":
+                if tool_name == "task_done":
                     task_completed = True
             
             if task_completed:

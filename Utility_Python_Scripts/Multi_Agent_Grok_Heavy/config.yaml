@@ -1,6 +1,6 @@
 # Gemini API settings
 gemini:
-  api_key: "" # Replace with your actual Gemini API key
+  api_key: "AIzaSyBpS6NMKZdmoJAyIwAYGDasAGt67gsciFQ" # Replace with your actual Gemini API key
   model: "gemini-2.5-flash" # Or another suitable Gemini model
 
 # System prompt for the agent
