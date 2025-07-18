@@ -184,6 +184,8 @@ config_local.yaml
 config_production.yaml
 local_config.yaml
 *.local.yaml
+Utility_Python_Scripts/Multi_Agent_Grok_Heavy/config.yaml
+config.yaml
 
 # Logs
 *.log
