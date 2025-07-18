@@ -35,8 +35,11 @@ class GeminiAgent:
         except Exception as e:
             return {"function_response": {"name": tool_name, "response": {"error": f"Tool execution failed: {str(e)}"}}}
 
-    def run(self, user_input: str):
-        """Initializes a chat session and runs the agent loop."""
+    def run(self, user_input: str, json_mode: bool = False):
+        """
+        Initializes a chat session and runs the agent loop.
+        If json_mode is True, it will attempt to extract a JSON object from the final response.
+        """
         client = genai.GenerativeModel(
             self.config['gemini']['model'],
             tools=self.tools,
@@ -68,7 +71,17 @@ class GeminiAgent:
             if not tool_call_parts:
                 if not self.silent:
                     print("💭 Agent responded without tool calls. Task may be complete.")
-                return "\n\n".join(full_response_content)
+                
+                final_response = "\n\n".join(full_response_content)
+                if json_mode:
+                    try:
+                        # Find the JSON block and extract it
+                        json_block = final_response[final_response.find('```json\n') + 8 : final_response.rfind('\n```')]
+                        return json_block.strip()
+                    except Exception:
+                        # Fallback if JSON extraction fails
+                        return final_response
+                return final_response
 
             if not self.silent:
                 print(f"🔧 Agent making {len(tool_call_parts)} tool call(s)")

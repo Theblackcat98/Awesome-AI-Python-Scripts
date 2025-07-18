@@ -40,11 +40,11 @@ class TaskOrchestrator:
         question_agent.tool_mapping = {name: func for name, func in question_agent.tool_mapping.items() if name != 'mark_task_complete'}
         
         try:
-            # Get AI-generated questions
-            response = question_agent.run(generation_prompt)
+            # Get AI-generated questions in JSON mode
+            response = question_agent.run(generation_prompt, json_mode=True)
             
             # Parse JSON response
-            questions = json.loads(response.strip())
+            questions = json.loads(response)
             
             # Validate we got the right number of questions
             if len(questions) != num_agents:
