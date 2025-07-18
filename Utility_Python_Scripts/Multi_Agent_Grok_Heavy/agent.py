@@ -1,7 +1,7 @@
 import json
 import yaml
 import google.generativeai as genai
-from tools import discover_tools
+from tools.tool_manager import ToolManager
 
 class GeminiAgent:
     def __init__(self, config_path="config.yaml", silent=False):
@@ -9,9 +9,13 @@ class GeminiAgent:
             self.config = yaml.safe_load(f)
         self.silent = silent
         genai.configure(api_key=self.config['gemini']['api_key'])
-        self.discovered_tools = discover_tools(self.config, silent=self.silent)
-        self.tools = [tool.to_gemini_schema() for tool in self.discovered_tools.values()]
-        self.tool_mapping = {name: tool.execute for name, tool in self.discovered_tools.items()}
+        
+        # Initialize the tool manager
+        self.tool_manager = ToolManager(self.config.get('tool_configs', {}))
+        
+        # Get tool schemas and execution mapping from the manager
+        self.tools = self.tool_manager.get_all_gemini_schemas()
+        self.tool_mapping = {name: self.tool_manager.get_tool(name).execute for name in self.tool_manager.get_registered_tool_names()}
 
     def handle_tool_call(self, tool_call_part):
         """Handles a tool call and returns a serializable part for the next API call."""
@@ -20,10 +24,8 @@ class GeminiAgent:
         tool_args = {key: value for key, value in tool_call.args.items()}
         
         try:
-            if tool_name in self.tool_mapping:
-                tool_result = self.tool_mapping[tool_name](**tool_args)
-            else:
-                tool_result = {"error": f"Unknown tool: {tool_name}"}
+            # Use the tool manager to execute the tool
+            tool_result = self.tool_manager.execute_tool(tool_name, **tool_args)
             
             # Ensure the tool output is always JSON serializable
             try:

@@ -55,10 +55,7 @@ class SearchTool(BaseTool):
                 },
                 "max_results": {
                     "type": "integer",
-                    "description": "Maximum number of top search results to return. A smaller number (e.g., 3-5) is usually sufficient. Do not set too high to avoid excessive processing and API calls.",
-                    "default": 5,
-                    "minimum": 1,
-                    "maximum": 10 # Set a sensible upper limit for performance and cost
+                    "description": "Maximum number of top search results to return. A smaller number (e.g., 3-5) is usually sufficient. Do not set too high to avoid excessive processing and API calls."
                 }
             },
             "required": ["query"]
@@ -115,7 +112,7 @@ class SearchTool(BaseTool):
             # Perform the DuckDuckGo search
             # ddgs.text returns a generator, convert to list to iterate multiple times if needed
             # or just iterate directly. For simplicity, we convert to list here.
-            search_results = list(self.ddgs.text(keywords=query, max_results=max_results))
+            search_results = list(self.ddgs.text(query=query, max_results=max_results))
 
             if not search_results:
                 return {"success": True, "results": [], "message": "No search results found for the query."}
