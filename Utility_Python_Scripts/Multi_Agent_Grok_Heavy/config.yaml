@@ -1,12 +1,7 @@
-# OpenRouter API settings
-openrouter:
-  api_key: "YOUR KEY"
-  base_url: "https://openrouter.ai/api/v1"
-  
-  # IMPORTANT: When selecting a model, ensure it has a high context window (200k+ tokens recommended)
-  # The orchestrator can generate large amounts of results from multiple agents that need to be
-  # processed together during synthesis. Low context window models may fail or truncate results.
-  model: "moonshotai/kimi-k2"
+# Gemini API settings
+gemini:
+  api_key: "YOUR_GEMINI_API_KEY" # Replace with your actual Gemini API key
+  model: "gemini-1.5-flash" # Or another suitable Gemini model
 
 # System prompt for the agent
 system_prompt: |

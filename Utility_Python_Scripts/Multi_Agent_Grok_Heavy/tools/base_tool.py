@@ -27,13 +27,10 @@ class BaseTool(ABC):
         """Execute the tool with given parameters"""
         pass
     
-    def to_openrouter_schema(self) -> Dict[str, Any]:
-        """Convert tool to OpenRouter function schema"""
+    def to_gemini_schema(self) -> Dict[str, Any]:
+        """Convert tool to Gemini function schema"""
         return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": self.parameters
-            }
+            "name": self.name,
+            "description": self.description,
+            "parameters": self.parameters
         }
