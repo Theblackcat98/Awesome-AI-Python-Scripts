@@ -1,0 +1,13 @@
+--- ADVANCED POETRY IMAGE PROMPT ---
+
+**Opening Technical Shot Description:** Medium shot, slightly low angle, focusing on a figure seated in a sunlit corner of a room. The figure is positioned slightly off-center, according to the rule of thirds, their back partially towards the camera, emphasizing vulnerability and introspection.  The primary light source is soft, diffused sunlight streaming through a window, partially obscured by dense green foliage.
+
+**Environmental & Atmospheric Detail:** The setting is a cozy, secluded room with ruddy brick walls visible in the background, adding a sense of age and history.  Thick, green trees are seen through the gated windows, creating a sense of privacy and seclusion. The foreground features a worn wooden floor, a writing desk or table partially visible, with a pen and paper resting upon it. The overall atmosphere is one of quiet introspection and peace, tinged with lingering melancholy.  Dust motes are visible in the sunbeams, adding a sense of stillness.
+
+**Technical Specifications & Style:**  The image should emulate a photorealistic style, with a shallow depth of field to emphasize the figure and the writing materials. The sunlight should have a warm, slightly golden hue (3000K), contrasted with the cooler tones (5000K) of the shadows and the muted colors of the room. The lens used should create a soft, slightly diffused focus, blurring the background details gently. There should be subtle cinematic lighting, focusing on the figure and creating a sense of intimacy.  Post-processing should involve minimal color correction, maintaining a naturalistic feel.
+
+
+**Color, Texture & Material Details:** The color palette is muted and calming, featuring warm yellows and golds from the sunlight, contrasted with the cool greens of the foliage and the ruddy browns of the brick walls.  Textures should include the coarse weave of a thick cotton sweater, the smooth surface of the wooden table, and the slightly rough texture of the paper.  The subtle interplay of light and shadow on the figure's clothing and face should be carefully rendered.
+
+
+**Mood Integration & Final Polish:** The image should capture the poem's emotional shift from quiet anguish to a sense of comfort and acceptance. The composition should visually represent the themes of concealment and revelation, privacy and connection. The subtle light and shadows, the carefully chosen colors, and the positioning of the figure should all work together to evoke feelings of solace, peace, and a newfound sense of being known and loved.  The overall aesthetic should reference the quiet intimacy and emotional depth of classic portraiture and religious iconography.  A slight film grain effect could be added to enhance the nostalgic mood.

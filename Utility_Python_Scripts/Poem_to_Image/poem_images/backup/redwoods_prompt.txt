@@ -1,0 +1,15 @@
+--- CINEMATIC IMAGE PROMPT ---
+
+1. **Shot type and composition:**  A series of shots; beginning with a majestic establishing wide shot, transitioning to a dramatic close-up, and concluding with a serene medium shot.
+
+2. **Primary subject/scene:** The primary subject is a colossal Redwood, initially shown in its majestic glory, towering over a misty, coastal landscape.  The second shot focuses on a fallen Redwood, splintered and broken, lying on the forest floor amidst mud and debris.  The final shot portrays the fallen Redwood decaying gracefully, surrounded by lush green grass near a tranquil stream.
+
+3. **Lighting and atmosphere:** The first shot utilizes a dramatic, almost ethereal light, with shafts of sunlight piercing through the mist to illuminate the redwood's crown.  This contrasts sharply with the second shot, which employs deep shadows and a muted color palette to emphasize the redwood's devastation. The final shot uses soft, diffused light, creating a peaceful and accepting atmosphere.
+
+4. **Color palette and texture details:** The first shot features rich, deep greens of the redwood canopy against a misty blue-grey background.  The second shot is dominated by somber browns, grays, and muddy textures, highlighting the splintered wood and soil. The third shot incorporates vibrant greens of the grass and moss, alongside the cool blues and greens of the flowing stream, creating a gentle contrast.
+
+5. **Environmental/atmospheric conditions:** The first shot is set in a coastal redwood forest with heavy mist and fog. The second shot depicts a post-disaster scene, possibly after a storm or logging activity. The third shot presents a tranquil, serene environment, evoking a sense of peace and acceptance within nature.
+
+6. **Artistic style references:** The overall style draws inspiration from the painterly landscapes of Caspar David Friedrich, combined with the dramatic realism of Ansel Adams' nature photography.
+
+7. **Technical photographic effects:** The first shot uses a shallow depth of field to focus on the Redwood, with the background softly blurred. The second shot employs strong chiaroscuro lighting and high contrast to highlight the damage. The third shot uses a natural, soft light to emphasize the texture of the grass and water.  A subtle film grain effect might be added to evoke a sense of time and the passage of seasons.  The overall tone aims for a melancholic yet ultimately hopeful atmosphere, reflecting the poem’s emotional arc.

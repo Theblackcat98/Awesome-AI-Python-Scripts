@@ -1,0 +1,15 @@
+--- CINEMATIC IMAGE PROMPT ---
+
+1. **Shot type and composition:**  A low-angle, medium shot focusing on a solitary figure hunched against a backdrop of a vast, stormy landscape. The figure should occupy approximately one-third of the frame, emphasizing their vulnerability within the immensity of nature.
+
+2. **Primary subject/scene:** A lone individual, shrouded in a tattered, dark cloak, sits amidst a windswept, rain-lashed landscape.  The individual's posture conveys profound weariness and despair; their face is partially obscured, suggesting both anonymity and the internal struggle they endure. The background is a chaotic blend of stormy skies and desolate terrain.
+
+3. **Lighting and atmosphere:** The scene is bathed in a cold, desaturated palette. The lighting is predominantly diffused, mimicking the overcast sky, with streaks of almost ethereal, pale light piercing through the storm clouds, highlighting the figure's isolation.  The overall atmosphere is one of bleakness, solitude, and emotional rawness.
+
+4. **Color palette and texture details:**  The color palette is muted and somber, dominated by deep blues, greys, and muted browns. The figure's clothing possesses a rough, almost decaying texture, emphasizing their vulnerability. The rain-soaked ground is slick and dark, while the sky is heavy and oppressive.  The overall texture of the scene is gritty and stark.
+
+5. **Environmental/atmospheric conditions:** The environment is harsh and unforgiving. A relentless rain lashes down, and a fierce wind whips across the landscape, carrying with it a sense of unrelenting desolation. The air is cold, damp, and heavy with the weight of despair.  The background should be a sprawling, desolate landscape, perhaps a moor or a windswept plain, devoid of any comforting features.
+
+6. **Artistic style references:**  The overall mood and visual style should draw inspiration from the bleak landscapes of Caspar David Friedrich and the emotional intensity of Edward Hopper's paintings. A touch of cinematic realism, reminiscent of Terrence Malick's work, might add depth to the scene.
+
+7. **Technical photographic effects:**  A shallow depth of field should be used to isolate the figure, drawing attention to their despair. The use of long exposure photography could capture the movement of rain and wind, further enhancing the sense of relentless exposure to the elements.  A subtle film grain effect could be incorporated to add a texture that complements the overall gritty aesthetic.  Color grading should heavily favor cool tones, emphasizing the cold and isolating atmosphere.
