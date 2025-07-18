@@ -4,6 +4,30 @@ import yt_dlp
 import re
 import glob
 import json
+import torch
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def get_optimal_device():
+    """Determines the optimal device for PyTorch based on availability."""
+    if torch.backends.mps.is_available():
+        logging.info("Apple Silicon (MPS) detected. Using MPS.")
+        return "mps"
+    # ROCm check assumes that if CUDA is available, it might be a ROCm environment on AMD
+    if torch.cuda.is_available():
+        # Crude check for ROCm: torch.version.hip exists in ROCm builds
+        # This check is wrapped to avoid static analysis errors with Pylance
+        version_module = getattr(torch, 'version', None)
+        if version_module and hasattr(version_module, 'hip') and version_module.hip:
+            logging.info("ROCm (AMD GPU) detected. Using ROCm.")
+            return "rocm"
+        else:
+            logging.info("CUDA (Nvidia GPU) detected. Using CUDA.")
+            return "cuda"
+    logging.info("No compatible GPU detected. Falling back to CPU.")
+    return "cpu"
 
 def sanitize_filename(filename):
     return re.sub(r'[\\/*?:"<>|]', "", filename)
@@ -21,8 +45,10 @@ def download_youtube_audio(url, output_folder):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        title = sanitize_filename(info['title'])
-        return find_audio_file(output_folder, title)
+        if info:
+            title = sanitize_filename(info.get('title', 'default_title'))
+            return find_audio_file(output_folder, title)
+        return None
 
 def find_audio_file(folder, title):
     pattern = os.path.join(folder, f"{title}.*")
@@ -30,27 +56,33 @@ def find_audio_file(folder, title):
     return files[0] if files else None
 
 def transcribe_audio(audio_file):
-    # Set the environment variable to enable CPU fallback
-    os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+    device = get_optimal_device()
 
     command = [
         "insanely-fast-whisper",
         "--file-name", audio_file,
-        "--device-id", "mps",
+        "--device-id", device,
         "--model-name", "openai/whisper-large-v3",
         "--batch-size", "4",
         "--timestamp", "word"
     ]
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
-        print("Error during transcription:")
-        print(result.stderr)
+        logging.error("Error during transcription:")
+        logging.error(result.stderr)
         return None
-    
-    # Parse the output manually
-    output_lines = result.stdout.strip().split('\n')
-    transcription_text = ' '.join(output_lines[1:])  # Skip the first line which is usually a progress bar
-    
+
+    try:
+        # Try parsing the output as JSON
+        transcription_data = json.loads(result.stdout)
+        transcription_text = transcription_data.get("text", "")
+    except json.JSONDecodeError:
+        # Fallback to manual parsing if JSON fails
+        logging.warning("Failed to parse transcription output as JSON. Falling back to line-based parsing.")
+        output_lines = result.stdout.strip().split('\n')
+        # A simple heuristic to find the start of the actual transcription
+        transcription_text = ' '.join(line for line in output_lines if not line.startswith('[') and not line.endswith(']'))
+
     return {
         'text': transcription_text,
         'raw_output': result.stdout
