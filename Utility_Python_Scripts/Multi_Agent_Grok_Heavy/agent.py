@@ -101,8 +101,8 @@ class GeminiAgent:
                 if not self.silent:
                     print("💭 Agent responded without tool calls. Task may be complete.")
                 # If there's text, return it. Otherwise, return the joined content.
-                text_response = " ".join(text_parts) if text_parts else "\n\n".join(full_response_content)
-                return text_response if text_response else "Agent session complete."
+                full_response_content.append(response.text)
+                return "\n\n".join(full_response_content)
 
             if not self.silent:
                 print(f"🔧 Agent making {len(tool_call_parts)} tool call(s)")
