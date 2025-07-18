@@ -11,11 +11,11 @@ from typing import cast, Mapping, Any
 
 # MODE 1: DISCOVERY - Choose a sub-niche to search for a random repo.
 # To use this mode, leave SPECIFIC_REPO blank.
-TECH_SUB_NICHE = "AI/LLM from Big Tech"  # Options are keys in SUB_NICHES dictionary below
+TECH_SUB_NICHE = ""  # Options are keys in SUB_NICHES dictionary below
 
 # MODE 2: SPECIFIC REPO - Provide a repo name to write about it directly.
 # To use this mode, fill in the repo name (e.g., "facebook/react"). This will override the sub-niche search.
-SPECIFIC_REPO = "" # Example: "google/gemma.cpp" or "vercel/next.js"
+SPECIFIC_REPO = "Doriandarko/make-it-heavy" # Example: "google/gemma.cpp" or "vercel/next.js"
 
 # Optional: Add your GitHub Personal Access Token to increase API rate limits
 # Create one here: https://github.com/settings/tokens
@@ -89,6 +89,48 @@ def get_tech_topic_and_data():
             print(f"Error: Could not search GitHub for sub-niche '{TECH_SUB_NICHE}'. Details: {e}")
             return None
 
+    if repo_data:
+        repo_full_name = repo_data['full_name']
+        print(f"Fetching README and docs for {repo_full_name}...")
+
+        # Fetch README content
+        readme_content = ""
+        try:
+            readme_url = f"https://api.github.com/repos/{repo_full_name}/readme"
+            readme_response = requests.get(readme_url, headers=headers, timeout=10)
+            if readme_response.status_code == 200:
+                download_url = readme_response.json().get('download_url')
+                if download_url:
+                    content_response = requests.get(download_url, timeout=10)
+                    content_response.raise_for_status()
+                    readme_content = content_response.text
+                    print("  - README found and fetched.")
+        except requests.exceptions.RequestException:
+            print("  - Info: Could not fetch README. It might not exist.")
+        repo_data['readme'] = readme_content
+
+        # Fetch content from /docs/*.md files
+        docs_content = ""
+        try:
+            docs_url = f"https://api.github.com/repos/{repo_full_name}/contents/docs"
+            docs_response = requests.get(docs_url, headers=headers, timeout=10)
+            if docs_response.status_code == 200:
+                docs_files = docs_response.json()
+                md_files_found = 0
+                for file_info in docs_files:
+                    if isinstance(file_info, dict) and file_info.get('type') == 'file' and file_info.get('name', '').endswith('.md'):
+                        download_url = file_info.get('download_url')
+                        if download_url:
+                            content_response = requests.get(download_url, timeout=10)
+                            content_response.raise_for_status()
+                            docs_content += f"\n\n--- Content from {file_info['name']} ---\n{content_response.text}"
+                            md_files_found += 1
+                if md_files_found > 0:
+                    print(f"  - Found and fetched {md_files_found} Markdown file(s) from /docs.")
+        except requests.exceptions.RequestException:
+            print("  - Info: Could not fetch /docs content. The directory might not exist or is empty.")
+        repo_data['docs'] = docs_content
+
     return repo_data
 
 def generate_blog_post():
@@ -103,6 +145,8 @@ def generate_blog_post():
     language = repo_data.get('language', 'N/A')
     stars = repo_data.get('stargazers_count', 0)
     topics = ", ".join(repo_data.get('topics', []))
+    readme = repo_data.get('readme', '')
+    docs = repo_data.get('docs', '')
 
     # Step 2: Generate Title and Keywords
     title = f"A Deep Dive into {repo_name}: Features, Use Cases, and Getting Started"
@@ -117,7 +161,7 @@ def generate_blog_post():
     # Step 3: Connect to Ollama
     try:
         ollama = Client(host='http://localhost:11434')
-        MODEL_NAME = 'llama3.1'
+        MODEL_NAME = 'Jan128k:latest'
         print(f"Successfully connected to Ollama.")
     except Exception as e:
         print(f"Error connecting to Ollama: {e}\nPlease ensure Ollama is running and '{MODEL_NAME}' is installed.")
@@ -136,6 +180,12 @@ def generate_blog_post():
     - **Primary Language:** {language}
     - **Stars:** {stars}
     - **Topics/Keywords:** {topics}
+
+    **Repository Content (for context, truncated):**
+    - **README.md:**
+    {readme[:2000]}
+    - **Docs Content:**
+    {docs[:2000]}
 
     **Instructions:**
     Generate a comprehensive outline that covers the following sections. Ensure the content is targeted at developers and avoids generic marketing language.
@@ -195,6 +245,12 @@ def generate_blog_post():
     -   **Stars:** {stars}
     -   **Topics:** {topics}
 
+    **Full Repository Content (for detailed writing):**
+    - **README.md:**
+    {readme}
+    - **Docs Content:**
+    {docs}
+
     ---
     **Outline to Follow:**
     {outline}
@@ -228,11 +284,13 @@ repository_url: "{repo_data.get('html_url', '')}"
 ---
 """
     final_draft = f"{front_matter}\n{corrected_draft}"
-    
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     filename = sanitize_filename(repo_name)
-    filepath = os.path.join("posts", f"{datetime.now().strftime('%Y-%m-%d')}-{filename}.md")
-    os.makedirs("posts", exist_ok=True)
-    
+    posts_dir = os.path.join(script_dir, "posts")
+    filepath = os.path.join(posts_dir, f"{datetime.now().strftime('%Y-%m-%d')}-{filename}.md")
+    os.makedirs(posts_dir, exist_ok=True)
+
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(final_draft)
     print(f"\n✅ Blog post successfully saved to: {filepath}")
