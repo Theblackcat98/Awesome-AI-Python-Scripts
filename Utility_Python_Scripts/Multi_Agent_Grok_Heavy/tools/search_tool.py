@@ -27,8 +27,7 @@ class SearchTool(BaseTool):
                 },
                 "max_results": {
                     "type": "integer",
-                    "description": "Maximum number of search results to return",
-                    "default": 5
+                    "description": "Maximum number of search results to return"
                 }
             },
             "required": ["query"]
