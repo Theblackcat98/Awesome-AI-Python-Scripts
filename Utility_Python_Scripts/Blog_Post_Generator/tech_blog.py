@@ -161,7 +161,7 @@ def generate_blog_post():
     # Step 3: Connect to Ollama
     try:
         ollama = Client(host='http://localhost:11434')
-        MODEL_NAME = 'Jan128k:latest'
+        MODEL_NAME = 'jan-nano:latest'
         print(f"Successfully connected to Ollama.")
     except Exception as e:
         print(f"Error connecting to Ollama: {e}\nPlease ensure Ollama is running and '{MODEL_NAME}' is installed.")
