@@ -1,7 +1,7 @@
 # Gemini API settings
 gemini:
-  api_key: "YOUR_GEMINI_API_KEY" # Replace with your actual Gemini API key
-  model: "gemini-1.5-flash" # Or another suitable Gemini model
+  api_key: "" # Replace with your actual Gemini API key
+  model: "gemini-2.5-flash" # Or another suitable Gemini model
 
 # System prompt for the agent
 system_prompt: |
