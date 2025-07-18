@@ -24,12 +24,17 @@ GITHUB_TOKEN = "" # e.g., "ghp_xxxxxxxxxxxxxxxxxxxx"
 # --- Sub-Niche Definitions (GitHub Search Queries) ---
 # Feel free to add your own!
 SUB_NICHES = {
-    "AI/LLM from Big Tech": "q=AI+OR+LLM+OR+transformer+in:name,description,topics+user:google+user:meta+user:openai+user:microsoft+user:apple&sort=stars&order=desc",
-    "Top Python Projects": "q=language:python&sort=stars&order=desc",
+    "AI/LLM from Big Tech": "q=(AI+OR+LLM+OR+transformer)+in:name,description,topics+org:google+org:meta+org:openai+org:microsoft+org:apple+sort:stars-desc+created:>=2023-01-01",
+    "Top Python Projects": "q=language:python+sort:stars-desc+created:>=2023-01-01",
     "Trending JavaScript Frameworks": "q=javascript+framework+in:name,description,topics&sort=stars&order=desc",
     "Data Science & Analytics": "q=data+science+OR+pandas+OR+numpy+OR+scikitlearn+in:topics&sort=stars&order=desc",
     "WebAssembly (WASM) Tools": "q=webassembly+OR+wasm+in:name,description,topics&sort=stars&order=desc",
     "Rust Language Projects": "q=language:rust&sort=stars&order=desc",
+    "Cloud Native & DevOps Tools": "q=cloud-native+OR+kubernetes+OR+docker+OR+terraform+OR+ansible+in:name,description,topics+sort:stars-desc",
+    "Cybersecurity & Hacking Tools": "q=security+OR+hacking+OR+pentesting+OR+vulnerability+in:name,description,topics+sort:stars-desc",
+    "Mobile Development (Flutter/React Native)": "q=(flutter+OR+\"react native\")+in:name,description,topics+sort:stars-desc",
+    "Blockchain & Web3": "q=blockchain+OR+web3+OR+ethereum+OR+solana+in:name,description,topics+sort:stars-desc",
+    "Edge Computing & IoT": "q=(edge+OR+iot+OR+embedded)+in:name,description,topics+sort:stars-desc",
 }
 
 def sanitize_filename(title):
@@ -121,17 +126,41 @@ def generate_blog_post():
     # Step 4: Generate Outline
     print("Generating outline...")
     prompt = f"""
-    Create a detailed blog post outline for the title: '{title}'.
-    The post is about the GitHub repository '{repo_name}'.
-    Its description is: "{description}".
-    It has {stars} stars and is primarily written in {language}.
-    
-    The outline should include:
-    1. A compelling introduction that explains what the repository is and its main purpose.
-    2. A section on its key features and what makes it unique.
-    3. A section on primary use cases or who this project is for.
-    4. A simple 'Getting Started' or 'How to Use' section.
-    5. A conclusion summarizing its importance and potential future.
+    You are a senior software engineer and technical writer tasked with creating a blog post outline.
+
+    **Objective:** Create a detailed, well-structured blog post outline for the title: '{title}'.
+
+    **Repository Details:**
+    - **Name:** {repo_name}
+    - **Description:** "{description}"
+    - **Primary Language:** {language}
+    - **Stars:** {stars}
+    - **Topics/Keywords:** {topics}
+
+    **Instructions:**
+    Generate a comprehensive outline that covers the following sections. Ensure the content is targeted at developers and avoids generic marketing language.
+
+    1.  **Introduction:**
+        -   Hook: Start with a compelling question or statement about the problem the repository solves.
+        -   Briefly introduce '{{repo_name}}' and its core purpose based on its description.
+        -   Mention its popularity (stars) and the primary language.
+
+    2.  **Why It Matters: Key Features & Uniqueness:**
+        -   Identify 2-3 standout features based on the description and topics.
+        -   Explain what makes this project unique compared to alternatives (if applicable).
+
+    3.  **Core Use Cases & Target Audience:**
+        -   Describe the primary scenarios where this repository is most useful.
+        -   Define the ideal user for this project (e.g., frontend developers, data scientists).
+
+    4.  **Getting Started: A Quick Practical Guide:**
+        -   Outline the basic steps for installation and a simple "hello world" example.
+        -   Mention key dependencies or prerequisites.
+
+    5.  **Conclusion & Future Outlook:**
+        -   Summarize the key takeaways and the repository's importance.
+        -   Include a call to action (e.g., "Try it out," "Contribute to the project").
+        -   Briefly touch on its potential future development or impact.
     """
     try:
         outline_response = ollama.chat(model=MODEL_NAME, messages=[{'role': 'user', 'content': prompt}])
@@ -146,20 +175,33 @@ def generate_blog_post():
     api_data_summary = f"Repo: {repo_name}, Description: {description}, Language: {language}, Stars: {stars}, Topics: {topics}"
     
     prompt = f"""
-    You are a technical blog writer. Write a complete, 1000-word blog post based on the following outline and information.
-    
-    Title: {title}
-    
-    Keywords to include naturally: {', '.join(keywords)}
-    
-    Technical context: {api_data_summary}
-    
-    Outline to follow:
+    You are a technical blog writer with expertise in '{{language}}'. Your task is to write a complete, in-depth blog post.
+
+    **Target Audience:** Developers with intermediate experience in this field. The tone should be informative, engaging, and technically precise.
+
+    **Instructions:**
+    -   Write a ~1000-word blog post based on the provided title, context, and outline.
+    -   Strictly adhere to the outline, using the points as a guide for section headers (use Markdown `##` and `###`).
+    -   Naturally weave the following keywords into the text: {{', '.join(keywords)}}.
+    -   Where appropriate, especially in the "Getting Started" section, provide clear and concise code snippets using Markdown code blocks.
+    -   End with a strong conclusion and a clear call to action.
+
     ---
+    **Title:** {title}
+
+    **Technical Context:**
+    -   **Repository:** {repo_name}
+    -   **Description:** {description}
+    -   **Language:** {language}
+    -   **Stars:** {stars}
+    -   **Topics:** {topics}
+
+    ---
+    **Outline to Follow:**
     {outline}
     ---
-    
-    Write the full blog post now. Use a clear, informative, and engaging tone. Use Markdown for formatting (e.g., ## for headings, `code` for snippets).
+
+    Write the full blog post now.
     """
     try:
         draft_response = ollama.chat(model=MODEL_NAME, messages=[{'role': 'user', 'content': prompt}])
