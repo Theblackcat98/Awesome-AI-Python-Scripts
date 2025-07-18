@@ -2,6 +2,7 @@ import json
 import yaml
 import time
 import threading
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional
 from agent import GeminiAgent
@@ -107,11 +108,13 @@ class TaskOrchestrator:
             }
             
         except Exception as e:
-            # Simple error handling
+            print(f"DEBUG: Agent {agent_id} failed with exception: {e}")
+            traceback.print_exc()
+            # More detailed error handling
             return {
                 "agent_id": agent_id,
                 "status": "error",
-                "response": f"Error: {str(e)}",
+                "response": f"Error: {str(e)}\n{traceback.format_exc()}",
                 "execution_time": 0
             }
     
@@ -167,6 +170,7 @@ class TaskOrchestrator:
         except Exception as e:
             # Log the error for debugging
             print(f"\n🚨 SYNTHESIS FAILED: {str(e)}")
+            traceback.print_exc()
             print("📋 Falling back to concatenated responses\n")
             # Fallback: if synthesis fails, concatenate responses
             combined = []
@@ -215,10 +219,12 @@ class TaskOrchestrator:
                     agent_results.append(result)
                 except Exception as e:
                     agent_id = future_to_agent[future]
+                    print(f"DEBUG: Future for agent {agent_id} failed with exception: {e}")
+                    traceback.print_exc()
                     agent_results.append({
                         "agent_id": agent_id,
                         "status": "timeout",
-                        "response": f"Agent {agent_id + 1} timed out or failed: {str(e)}",
+                        "response": f"Agent {agent_id + 1} timed out or failed: {str(e)}\n{traceback.format_exc()}",
                         "execution_time": self.task_timeout
                     })
         

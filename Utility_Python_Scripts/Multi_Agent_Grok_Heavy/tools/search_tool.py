@@ -31,7 +31,7 @@ class SearchTool(BaseTool):
 
     @property
     def name(self) -> str:
-        return "search_web"
+        return "search"
 
     @property
     def description(self) -> str:

@@ -6,7 +6,7 @@ class TaskDoneTool(BaseTool):
     
     @property
     def name(self) -> str:
-        return "mark_task_complete"
+        return "task_done"
     
     @property
     def description(self) -> str:
