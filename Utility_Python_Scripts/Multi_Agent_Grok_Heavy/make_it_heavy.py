@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 import sys
@@ -129,6 +130,20 @@ class OrchestratorCLI:
             print()
             print("=" * 80)
             
+            # Save results to a file in the specified directory
+            results_dir = os.path.join(
+                os.path.dirname(__file__),
+                "task_results"
+            )
+            os.makedirs(results_dir, exist_ok=True)
+            results_path = os.path.join(results_dir, "final_results.md")
+            try:
+                with open(results_path, "w", encoding="utf-8") as f:
+                    f.write(result)
+                print(f"Results saved to {results_path}")
+            except Exception as e:
+                print(f"Error saving results to file: {e}")
+
             return result
             
         except Exception as e:
