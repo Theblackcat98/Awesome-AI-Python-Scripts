@@ -64,14 +64,28 @@ class BaseTool(ABC):
         This method is concrete because all tools will use the same structure
         based on their abstract properties.
         """
-        # The parameters dictionary needs to be unpacked into the Schema constructor
+        # Mapping from JSON Schema types to proto.Type enum
+        type_map = {
+            "string": protos.Type.STRING,
+            "number": protos.Type.NUMBER,
+            "integer": protos.Type.INTEGER,
+            "boolean": protos.Type.BOOLEAN,
+            "array": protos.Type.ARRAY,
+            "object": protos.Type.OBJECT,
+        }
+
         schema_properties = self.parameters.get("properties", {})
         
-        # Convert the properties dictionary into a map of Schema objects
-        proto_properties = {
-            key: protos.Schema(**value)
-            for key, value in schema_properties.items()
-        }
+        proto_properties = {}
+        for key, value in schema_properties.items():
+            # Get the correct enum type, defaulting to STRING if not found
+            prop_type_str = value.get("type", "string")
+            prop_type = type_map.get(prop_type_str.lower(), protos.Type.STRING)
+            
+            proto_properties[key] = protos.Schema(
+                type=prop_type,
+                description=value.get("description", "")
+            )
 
         return protos.FunctionDeclaration(
             name=self.name,
