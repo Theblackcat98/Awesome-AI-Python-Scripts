@@ -10,7 +10,7 @@ class OrchestratorCLI:
         self.running = False
         
         # Extract model name for display
-        model_full = self.orchestrator.config['openrouter']['model']
+        model_full = self.orchestrator.config['gemini']['model']
         # Extract model name (e.g., "google/gemini-2.5-flash-preview-05-20" -> "GEMINI-2.5-FLASH")
         if '/' in model_full:
             model_name = model_full.split('/')[-1]
@@ -145,15 +145,15 @@ class OrchestratorCLI:
         print("-" * 50)
         
         try:
-            orchestrator_config = self.orchestrator.config['openrouter']
+            orchestrator_config = self.orchestrator.config['gemini']
             print(f"Using model: {orchestrator_config['model']}")
             print("Orchestrator initialized successfully!")
-            print("Note: Make sure to set your OpenRouter API key in config.yaml")
+            print("Note: Make sure to set your Gemini API key in config.yaml")
             print("-" * 50)
         except Exception as e:
             print(f"Error initializing orchestrator: {e}")
             print("Make sure you have:")
-            print("1. Set your OpenRouter API key in config.yaml")
+            print("1. Set your Gemini API key in config.yaml")
             print("2. Installed all dependencies with: pip install -r requirements.txt")
             return
         
