@@ -142,7 +142,7 @@ def generate_blog_post():
 
     1.  **Introduction:**
         -   Hook: Start with a compelling question or statement about the problem the repository solves.
-        -   Briefly introduce '{{repo_name}}' and its core purpose based on its description.
+        -   Briefly introduce '{repo_name}' and its core purpose based on its description.
         -   Mention its popularity (stars) and the primary language.
 
     2.  **Why It Matters: Key Features & Uniqueness:**
@@ -172,17 +172,16 @@ def generate_blog_post():
 
     # Step 5: Generate Full Draft
     print("Generating full draft from outline...")
-    api_data_summary = f"Repo: {repo_name}, Description: {description}, Language: {language}, Stars: {stars}, Topics: {topics}"
     
     prompt = f"""
-    You are a technical blog writer with expertise in '{{language}}'. Your task is to write a complete, in-depth blog post.
+    You are a technical blog writer with expertise in '{language}'. Your task is to write a complete, in-depth blog post.
 
     **Target Audience:** Developers with intermediate experience in this field. The tone should be informative, engaging, and technically precise.
 
     **Instructions:**
     -   Write a ~1000-word blog post based on the provided title, context, and outline.
     -   Strictly adhere to the outline, using the points as a guide for section headers (use Markdown `##` and `###`).
-    -   Naturally weave the following keywords into the text: {{', '.join(keywords)}}.
+    -   Naturally weave the following keywords into the text: {', '.join(keywords)}.
     -   Where appropriate, especially in the "Getting Started" section, provide clear and concise code snippets using Markdown code blocks.
     -   End with a strong conclusion and a clear call to action.
 
