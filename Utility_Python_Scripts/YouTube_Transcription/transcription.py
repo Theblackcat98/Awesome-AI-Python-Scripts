@@ -12,25 +12,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def get_optimal_device():
     """Determines the optimal device for PyTorch based on availability."""
+    # For both CUDA and ROCm, PyTorch uses torch.cuda.is_available()
+    if torch.cuda.is_available():
+        # The device name for whisper is 'cuda' for both NVIDIA and AMD GPUs (with ROCm)
+        version_module = getattr(torch, 'version', None)
+        if version_module and hasattr(version_module, 'hip') and version_module.hip:
+            logging.info("ROCm (AMD GPU) detected. Passing 'cuda' to whisper.")
+        else:
+            logging.info("NVIDIA GPU detected. Passing 'cuda' to whisper.")
+        return "cuda"
     if torch.backends.mps.is_available():
         logging.info("Apple Silicon (MPS) detected. Using MPS.")
         return "mps"
-    # ROCm check assumes that if CUDA is available, it might be a ROCm environment on AMD
-    if torch.cuda.is_available():
-        # Crude check for ROCm: torch.version.hip exists in ROCm builds
-        # This check is wrapped to avoid static analysis errors with Pylance
-        version_module = getattr(torch, 'version', None)
-        if version_module and hasattr(version_module, 'hip') and version_module.hip:
-            logging.info("ROCm (AMD GPU) detected. Using ROCm.")
-            return "rocm"
-        else:
-            logging.info("CUDA (Nvidia GPU) detected. Using CUDA.")
-            return "cuda"
     logging.info("No compatible GPU detected. Falling back to CPU.")
     return "cpu"
-
-def sanitize_filename(filename):
-    return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 def download_youtube_audio(url, output_folder):
     ydl_opts = {
@@ -41,30 +36,28 @@ def download_youtube_audio(url, output_folder):
             'preferredquality': '192',
         }],
         'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
+        'restrictfilenames': True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
+        # The prepare_filename method might return a filename with the original extension,
+        # not the one from the post-processor.
         if info:
-            title = sanitize_filename(info.get('title', 'default_title'))
-            return find_audio_file(output_folder, title)
+            filename = ydl.prepare_filename(info)
+            base, _ = os.path.splitext(filename)
+            return base + '.' + ydl_opts['postprocessors'][0]['preferredcodec']
         return None
-
-def find_audio_file(folder, title):
-    pattern = os.path.join(folder, f"{title}.*")
-    files = glob.glob(pattern)
-    return files[0] if files else None
 
 def transcribe_audio(audio_file):
     device = get_optimal_device()
 
     command = [
-        "insanely-fast-whisper",
-        "--file-name", audio_file,
-        "--device-id", device,
-        "--model-name", "openai/whisper-large-v3",
-        "--batch-size", "4",
-        "--timestamp", "word"
+        "whisper",
+        audio_file,
+        "--device", device,
+        "--model", "large-v3",
+        "--word_timestamps", "True"
     ]
     result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
@@ -104,8 +97,8 @@ def main():
         print("Invalid choice. Exiting.")
         return
 
-    if audio_file is None:
-        print("Error: Could not find the audio file.")
+    if not audio_file or not os.path.exists(audio_file):
+        print("Error: Could not find the audio file or file does not exist.")
         return
 
     transcript_folder = "youtube_transcript"
