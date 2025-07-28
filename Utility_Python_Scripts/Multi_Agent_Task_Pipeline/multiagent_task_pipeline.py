@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 
 # === CONFIGURATION ===
-OLLAMA_MODEL = "llama3.1"  # Change to "mistral", "codellama", etc.
+OLLAMA_MODEL = "jan-nano:latest"  # Change to "mistral", "codellama", etc.
 OLLAMA_URL = "http://localhost:11434/api/chat"
 
 # === PROMPT TEMPLATES ===
