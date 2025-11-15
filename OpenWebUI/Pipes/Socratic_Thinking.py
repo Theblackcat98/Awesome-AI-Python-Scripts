@@ -1,20 +1,21 @@
 """
 title: Socratic Thinking
-author: Your Name/Handle
+author: TheBlackCat99
+author_url: https://github.com/TheBlackCat98/OpenWebUI-Tools
 description: A pipe that uses a generator-evaluator loop to refine answers through self-correction, mimicking the Socratic method.
+required_open_webui_version: 0.5.0
 requirements:
-version: 1.2
+version: 1.4
 licence: MIT
 """
 
 import os
-import re  # <-- Import the regular expression module
+import re
 import asyncio
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Protocol
 
 from pydantic import BaseModel, Field
 
-# Assuming these are available in the Open WebUI environment
 from open_webui.main import generate_chat_completions
 from open_webui.models.users import User
 
@@ -52,6 +53,27 @@ The answer incorrectly identifies the capital of Australia. It also fails to men
 """
 
 
+class SendCitationType(Protocol):
+    def __call__(self, url: str, title: str, content: str) -> Awaitable[None]: ...
+
+
+def get_send_citation(__event_emitter__: Callable[[dict], Awaitable[None]] | None) -> SendCitationType:
+    async def send_citation(url: str, title: str, content: str):
+        if __event_emitter__ is None:
+            return
+        await __event_emitter__(
+            {
+                "type": "citation",
+                "data": {
+                    "document": [content],
+                    "metadata": [{"source": url, "html": False}],
+                    "source": {"name": title},
+                },
+            }
+        )
+    return send_citation
+
+
 class Pipe:
     """
     This pipe implements the "Socratic Thinking" method, where one LLM generates an answer
@@ -66,11 +88,11 @@ class Pipe:
             description="Enable or disable the Socratic Thinking pipe.",
         )
         GENERATOR_MODEL: str = Field(
-            default="gemma:7b",
+            default="gpt-oss:latest",
             description="The model used to generate the initial and refined answers.",
         )
         EVALUATOR_MODEL: str = Field(
-            default="gemma:2b",
+            default="gpt-oss:latest",
             description="A smaller, faster model used to critique the generator's answers.",
         )
         MAX_LOOPS: int = Field(
@@ -93,6 +115,7 @@ class Pipe:
         self.__user__: User | None = None
         self.__request__: object | None = None
         self.__event_emitter__: Callable[[dict], Awaitable[None]] | None = None
+        self.send_citation: SendCitationType | None = None
 
     def pipes(self) -> list[dict[str, str]]:
         """
@@ -139,22 +162,55 @@ class Pipe:
         )
         messages = [{"role": "user", "content": prompt}]
 
+        # Send generator prompt to citations
+        if self.send_citation:
+            await self.send_citation(
+                url=f"socratic-thinking-loop-{loop_count}",
+                title=f"Generator Prompt (Loop {loop_count})",
+                content=prompt
+            )
+
         answer = await self._generate_completion(
             self.valves.GENERATOR_MODEL, messages, self.valves.TEMPERATURE
         )
+
+        # Send generator response to citations
+        if self.send_citation:
+            await self.send_citation(
+                url=f"socratic-thinking-loop-{loop_count}",
+                title=f"Generator Response (Loop {loop_count})",
+                content=answer
+            )
         return answer
 
-    async def _evaluate_answer(self, query: str, answer: str) -> str:
+    async def _evaluate_answer(self, query: str, answer: str, loop_count: int = 1) -> str:
         """Calls the evaluator model to critique an answer."""
         await self.emit_status("Evaluating answer...", done=False)
 
         prompt = EVALUATOR_PROMPT_TEMPLATE.format(query=query, answer=answer)
         messages = [{"role": "user", "content": prompt}]
+        
+        # Send evaluator prompt to citations
+        if self.send_citation:
+            await self.send_citation(
+                url=f"socratic-thinking-loop-{loop_count}",
+                title=f"Evaluator Prompt (Loop {loop_count})",
+                content=prompt
+            )
 
         # Use a low temperature for the evaluator to get consistent, objective feedback
         evaluation = await self._generate_completion(
             self.valves.EVALUATOR_MODEL, messages, 0.1
         )
+        
+        # Send evaluator response to citations
+        if self.send_citation:
+            await self.send_citation(
+                url=f"socratic-thinking-loop-{loop_count}",
+                title=f"Evaluator Response (Loop {loop_count})",
+                content=evaluation
+            )
+            
         return evaluation.strip()
 
     async def emit_status(self, message: str, done: bool):
@@ -198,6 +254,9 @@ class Pipe:
         self.__user__ = User(**__user__)
         self.__request__ = __request__
         self.__event_emitter__ = __event_emitter__
+        
+        # Initialize citation sender
+        self.send_citation = get_send_citation(__event_emitter__)
 
         messages = body.get("messages", [])
         if not messages:
@@ -219,7 +278,7 @@ class Pipe:
             )
 
             # 2. Evaluate the answer
-            evaluation = await self._evaluate_answer(user_query, current_answer)
+            evaluation = await self._evaluate_answer(user_query, current_answer, loop_count)
 
             # 3. Decide whether to pass or refine
             # --- START OF CORRECTION ---

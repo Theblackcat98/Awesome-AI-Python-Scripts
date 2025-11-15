@@ -1,10 +1,10 @@
 """
-title: Scrape Website
+title: Get Url Context
 author: TheBlackCat
 author_url: https://github.com/TheBlackCat98
-git_url: https://github.com/ekatiyar/open-webui-tools
+git_url: https://github.com/theblackcat98/open-webui-tools
 description: An improved web scraping tool that extracts text content using Jina Reader, now with better filtering, user-configuration, and UI feedback using emitters.
-version: 0.1.3
+version: 0.1.4
 """
 
 import requests
