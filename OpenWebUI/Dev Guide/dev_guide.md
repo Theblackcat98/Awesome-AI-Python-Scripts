@@ -7,12 +7,20 @@ This comprehensive guide provides the necessary context for developing OpenWebUI
 
 OpenWebUI Functions are modular Python components that extend the platform's capabilities. They are built-in, fast, and highly customizable plugins written in pure Python that operate directly within the OpenWebUI environment.
 
+### Key Citations
+- [Functions Overview](https://docs.openwebui.com/features/plugin/functions/)  
+- [Tools Development](https://docs.openwebui.com/features/plugin/tools/development/)  
+- [Pipe Functions](https://docs.openwebui.com/features/plugin/functions/pipe/)  
+- [Filter Functions](https://docs.openwebui.com/features/plugin/functions/filter/)  
+- [Action Functions](https://docs.openwebui.com/features/plugin/functions/action/)  
+- [Releases](https://github.com/open-webui/open-webui/releases)
+
 ## Table of Contents
 
 1. [Tools](#1-tools)
 2. [Pipes](#2-pipes)
 3. [Filters](#3-filters)
-4. [Buttons](#4-buttons)
+4. [Buttons](#4-actions)
 5. [Common Patterns](#5-common-patterns)
 6. [Version Compatibility](#6-version-compatibility)
 
@@ -311,37 +319,102 @@ class Filter:
         return body
 ```
 
-## 4. Buttons
+## 4. Actions
 
-Buttons add interactive elements to the chat interface. They can trigger actions or modify message behavior.
 
-### Button Example
+Action Functions add custom buttons to the message toolbar, enabling interactive functionality like "Summarize" or "Translate" buttons.
+
+### Structure Requirements
+- **File Structure**: Single Python file
+- **Core Class**: Must be named `Action`
+- **Method**: `async def action()` - main entry point
+- **Docstring Frontmatter**: Required metadata defining button behavior
+
+### Action Method Parameters
+- `body: dict`: Message data and context
+- `__user__`: User object with permissions and settings
+- `__event_emitter__`: Function for real-time UI updates
+- `__event_call__`: Function for bidirectional communication
+- `__model__`: Model information that triggered the action
+- `__request__`: FastAPI request object
+- `__id__`: Action ID for multi-action functions
+
+### Frontmatter Fields
+- `title`: Display name of the Action
+- `author`: Creator name
+- `version`: Version number
+- `required_open_webui_version`: Minimum compatible version
+- `icon_url`: Custom icon (data:image/svg+xml;base64,...)
+- `requirements`: Python package dependencies
+
+### Template Structure
 
 ```python
 """
-title: 'Code Formatter'
-description: 'Adds a button to format code in messages.'
+title: 'Summarize Message'
+description: 'Adds a button to summarize the selected message.'
+author: 'Your Name'
+version: '0.1.0'
+required_open_webui_version: '0.3.9'
+icon_url: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIyNHB4IiBoZWlnaHQ9IjI0cHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj48dGl0bGU+U3VtbWFyaXplPC90aXRsZT48ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz48ZyBpZD0iUGFnZS0xIiBzdHJva2U9Im5vbmUiIHN0cm9rZS1pZHRwPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGlkPSJTdW1tYXJpemUiIGZpbGw9IiNmZmZmZmYiIGZpbGwtcnVsZT0ibm9uemVybyI+PHBhdGggZD0iTTQsNCBMMjAsNCBMMjAsNiBMNCw2IEw0LDQgWiBNNCw4IEwyMCw4IEwyMCwxMCBMNCwxMCBMNCw4IFogTTQsMTIgTDIwLDEyIEwyMCwxNCBMNCwxNCBMNCwxMiBaIE00LDE2IEwxNCwxNiBMMTQsMTggTDQsMTggTDQsMTYgWiIgaWQ9IkxpbmVzIj48L3BhdGg+PC9nPjwvZz48L3N2Zz4='
 """
 
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from pydantic import BaseModel, Field
+from typing import Optional, Dict
+import asyncio
 
-class Buttons:
+class Valves(BaseModel):
+    summary_prefix: str = Field(
+        default="Summary:",
+        description="Text to add before the summary."
+    )
+
+# Main class must be named 'Action'
+class Action:
     def __init__(self):
-        self.buttons = [
-            {
-                'label': 'Format Code',
-                'id': 'format_code',
-                'icon': 'code',
-                'action': 'format_code',
-                'position': 'message_actions'
-            }
-        ]
+        self.valves = self.Valves()
+
+    # Main entry point when button is clicked
+    async def action(
+        self,
+        body: dict,
+        __user__ = None,
+        __event_emitter__ = None,
+        __event_call__ = None,
+        __model__ = None,
+        __request__ = None,
+        __id__ = None,
+    ) -> dict:
         
-    async def format_code(self, message: Dict[str, Any], __user__: Dict) -> Dict[str, Any]:
-        # Code formatting logic here
-        return {"status": "success", "message": "Code formatted!"}
+        # Get message content that triggered this action
+        message_content = body.get("content", "")
+        
+        # Send status update to UI
+        await __event_emitter__({
+            "type": "status",
+            "data": {"description": "Summarizing message...", "done": False}
+        })
+
+        # Perform the action (example: call an LLM to summarize)
+        await asyncio.sleep(1)  # Simulate processing
+        summary = f"This is a summary of: '{message_content[:20]}...'"
+        
+        # Get prefix from valves
+        valves = __user__["valves"] if __user__ else self.valves
+        prefix = valves.summary_prefix
+
+        # Send final status update
+        await __event_emitter__({
+            "type": "status",
+            "data": {"description": "Summary complete!", "done": True}
+        })
+
+        # Return new body to update message content
+        return {
+            "content": f"**{prefix}**\n\n{summary}"
+        }
 ```
+
 
 ## 5. Common Patterns
 
@@ -387,7 +460,7 @@ async def my_method(self, __event_emitter__, **kwargs):
 | **Core Tools**      | v0.1.0     | Basic tool functionality with Valves configuration                           |
 | **Pipes**           | v0.2.0     | Message interception and modification                                        |
 | **Filters**         | v0.3.0     | Inlet/stream/outlet processing pipeline                                      |
-| **Buttons**         | v0.4.0     | Interactive UI elements with custom actions                                  |
+| **Action**          | v0.4.0     | Interactive UI elements with custom actions                                  |
 | **Event System**    | v0.5.0     | Real-time updates, user interactions, and status notifications               |
 | **Model Management**| v0.6.0     | Built-in model handling, automatic authentication, and simplified deployment |
 | **Citations**       | v0.6.5     | Structured citation handling and source attribution                          |
@@ -420,122 +493,10 @@ async def my_method(self, __event_emitter__, **kwargs):
 - Improved message processing pipeline
 - Added support for streaming modifications
 
-### Migration Guide
 
-#### Migrating from v0.5.x to v0.6.0+
 
-1. **Update Model Calls**
-   ```python
-   # Old (pre-0.6.0)
-   import openai
-   response = openai.ChatCompletion.create(...)
-   
-   # New (0.6.0+)
-   from open_webui.main import generate_chat_completion
-   response = await generate_chat_completion(
-       request=__request__,
-       body=body,
-       user=__user__
-   )
-   ```
 
-2. **Update Event Handling**
-   ```python
-   # Old (pre-0.6.0)
-   await __event_emitter__({"type": "status", "data": "Processing..."})
-   
-   # New (0.6.0+)
-   await __event_emitter__({
-       "type": "status",
-       "data": {
-           "description": "Processing...",
-           "done": False
-       }
-   })
-   ```
-
-3. **New Features in v0.6.0+**
-   - Automatic API key management
-   - Built-in model selection UI
-   - Simplified deployment
-   - Better error handling
-   - Improved documentation
-
-#### Migrating from v0.4.x to v0.5.0
-
-1. **Update Function Signatures**
-   ```python
-   # Old (pre-0.5.0)
-   async def my_pipe(body: dict) -> dict:
-   
-   # New (0.5.0+)
-   async def my_pipe(
-       self,
-       body: dict,
-       __user__: dict,
-       __event_emitter__: Optional[Callable[[dict], Awaitable[None]]],
-       __request__: Any,
-       **kwargs
-   ) -> Any:
-   ```
-
-2. **Update Event Emission**
-   ```python
-   # Old (pre-0.5.0)
-   await __event_emitter__("Processing...")
-   
-   # New (0.5.0+)
-   await __event_emitter__({
-       "type": "status",
-       "data": {
-           "description": "Processing...",
-           "done": False
-       }
-   })
-   ```
-
-# Main class must be named 'Tools'
-class Tools:
-    def __init__(self):
-        self.valves = self.Valves()
-
-    # Public methods are exposed as tools to the LLM
-    def my_tool_function(self, query: str) -> str:
-        """
-        Use this tool to get information from My Service.
-        :param query: The search query to send to My Service.
-        """
-        # Admin-set valves: self.valves.my_api_key
-        # User-set valves: __user__["valves"].my_api_key
-        api_key = self.valves.my_api_key
-        
-        # Example: Send status update to UI
-        # if __event_emitter__:
-        #     await __event_emitter__({
-        #         "type": "status",
-        #         "data": {"description": "Searching My Service...", "done": False}
-        #     })
-            
-        # Function logic here
-        result = f"Result for '{query}'"
-        
-        # Final status update
-        # if __event_emitter__:
-        #     await __event_emitter__({
-        #         "type": "status",
-        #         "data": {"description": "Search complete", "done": True}
-        #     })
-            
-        return result
-
-    def another_tool(self, number: int, text: str) -> dict:
-        """
-        Another tool that takes multiple arguments.
-        :param number: A number to process.
-        :param text: A string to process.
-        """
-        return {"processed_number": number * 2, "processed_text": text.upper()}
-```
+---
 
 ## 2. Pipe Functions (Custom Models)
 
@@ -760,100 +721,6 @@ class Filter:
         return body
 ```
 
-## 4. Action Functions (UI Buttons)
-
-Action Functions add custom buttons to the message toolbar, enabling interactive functionality like "Summarize" or "Translate" buttons.
-
-### Structure Requirements
-- **File Structure**: Single Python file
-- **Core Class**: Must be named `Action`
-- **Method**: `async def action()` - main entry point
-- **Docstring Frontmatter**: Required metadata defining button behavior
-
-### Action Method Parameters
-- `body: dict`: Message data and context
-- `__user__`: User object with permissions and settings
-- `__event_emitter__`: Function for real-time UI updates
-- `__event_call__`: Function for bidirectional communication
-- `__model__`: Model information that triggered the action
-- `__request__`: FastAPI request object
-- `__id__`: Action ID for multi-action functions
-
-### Frontmatter Fields
-- `title`: Display name of the Action
-- `author`: Creator name
-- `version`: Version number
-- `required_open_webui_version`: Minimum compatible version
-- `icon_url`: Custom icon (data:image/svg+xml;base64,...)
-- `requirements`: Python package dependencies
-
-### Template Structure
-
-```python
-"""
-title: 'Summarize Message'
-description: 'Adds a button to summarize the selected message.'
-author: 'Your Name'
-version: '0.1.0'
-required_open_webui_version: '0.3.9'
-icon_url: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIyNHB4IiBoZWlnaHQ9IjI0cHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj48dGl0bGU+U3VtbWFyaXplPC90aXRsZT48ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz48ZyBpZD0iUGFnZS0xIiBzdHJva2U9Im5vbmUiIHN0cm9rZS1pZHRwPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGlkPSJTdW1tYXJpemUiIGZpbGw9IiNmZmZmZmYiIGZpbGwtcnVsZT0ibm9uemVybyI+PHBhdGggZD0iTTQsNCBMMjAsNCBMMjAsNiBMNCw2IEw0LDQgWiBNNCw4IEwyMCw4IEwyMCwxMCBMNCwxMCBMNCw4IFogTTQsMTIgTDIwLDEyIEwyMCwxNCBMNCwxNCBMNCwxMiBaIE00LDE2IEwxNCwxNiBMMTQsMTggTDQsMTggTDQsMTYgWiIgaWQ9IkxpbmVzIj48L3BhdGg+PC9nPjwvZz48L3N2Zz4='
-"""
-
-from pydantic import BaseModel, Field
-from typing import Optional, Dict
-import asyncio
-
-class Valves(BaseModel):
-    summary_prefix: str = Field(
-        default="Summary:",
-        description="Text to add before the summary."
-    )
-
-# Main class must be named 'Action'
-class Action:
-    def __init__(self):
-        self.valves = self.Valves()
-
-    # Main entry point when button is clicked
-    async def action(
-        self,
-        body: dict,
-        __user__ = None,
-        __event_emitter__ = None,
-        __event_call__ = None,
-        __model__ = None,
-        __request__ = None,
-        __id__ = None,
-    ) -> dict:
-        
-        # Get message content that triggered this action
-        message_content = body.get("content", "")
-        
-        # Send status update to UI
-        await __event_emitter__({
-            "type": "status",
-            "data": {"description": "Summarizing message...", "done": False}
-        })
-
-        # Perform the action (example: call an LLM to summarize)
-        await asyncio.sleep(1)  # Simulate processing
-        summary = f"This is a summary of: '{message_content[:20]}...'"
-        
-        # Get prefix from valves
-        valves = __user__["valves"] if __user__ else self.valves
-        prefix = valves.summary_prefix
-
-        # Send final status update
-        await __event_emitter__({
-            "type": "status",
-            "data": {"description": "Summary complete!", "done": True}
-        })
-
-        # Return new body to update message content
-        return {
-            "content": f"**{prefix}**\n\n{summary}"
-        }
-```
 
 ## Best Practices and Security Considerations
 

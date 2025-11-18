@@ -1,19 +1,18 @@
 """
-title: Hugging Face API - Flux Pro Image Generator
+title: Hugging Face Image Generator
+description: Generates images from text prompts using HuggingFace's Inference API
 author: TheBlackCat98
-author_url: https://github.com/theblackcat98/open-webui-tools/
-funding_url: https://github.com/theblackcat98/open-webui-tools
 version: 0.2.0
-license: MIT
-description: HuggingFace API implementation for text to image generation
+requirements: huggingface_hub, Pillow
 """
 
-import aiohttp
-import uuid
-import os
+
+import base64
 from pydantic import BaseModel, Field
 import logging
-from aiohttp import ClientTimeout
+from huggingface_hub import InferenceClient
+from io import BytesIO
+from PIL import Image
 
 # Import CACHE_DIR from your backend configuration so it matches the static files mount.
 from open_webui.config import CACHE_DIR
@@ -34,137 +33,120 @@ class Tools:
             default=None,
             description="HuggingFace API key for accessing the serverless endpoints",
         )
-        HF_API_URL: str = Field(
-            default="https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large-turbo",
-            description="HuggingFace API URL for accessing the serverless endpoint of a Text to Image model.",
+        MODEL_NAME: str = Field(
+            default="stabilityai/stable-diffusion-3.5-large-turbo",
+            description="HuggingFace model name for text-to-image generation",
         )
 
     def __init__(self):
         self.valves = self.Valves()
+        self.client = None
+        
+    async def _get_client(self):
+        if not self.client:
+            if not self.valves.HF_API_KEY:
+                raise ValueError("HuggingFace API key is not set in the Valves.")
+            self.client = InferenceClient(
+                provider="auto",
+                api_key=self.valves.HF_API_KEY
+            )
+        return self.client
+
+    async def _emit_status(
+        self, event_emitter, status: str, description: str, done: bool
+    ):
+        """Helper function to emit status updates."""
+        if event_emitter:
+            await event_emitter(
+                {
+                    "type": "status",
+                    "data": {"description": description, "status": status, "done": done},
+                }
+            )
 
     async def create_image(
         self,
         prompt: str,
-        image_format: str = "default",
-        __user__: dict = {},
         __event_emitter__=None,
+        image_format: str = "default",
+        model: str = None,
+        seed: int = 42,
     ) -> str:
         """
-        Creates visually stunning images with text prompts using text to image models.
-        If the user prompt is too general or lacking, embellish it to generate a better illustration.
+        Asynchronously generates an image based on a prompt.
 
-        :param prompt: The prompt to generate the image.
-        :param image_format: Format of the image (default, landscape, portrait, etc.)
+        Args:
+            prompt: The text prompt to generate the image from.
+            __event_emitter__: An asynchronous function to emit status events.
+            image_format: The desired aspect ratio of the image.
+            model: The AI model to use for generation (defaults to self.valves.MODEL_NAME).
+            seed: A seed for the random number generator for reproducibility.
+
+        Returns:
+            A Markdown string with the URL of the generated image on success,
+            or an error message on failure.
         """
-        print("[DEBUG] Starting create_flux_image function")
-
-        if not self.valves.HF_API_KEY:
-            print("[DEBUG] API key not found")
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "description": "Error: HuggingFace API key is not set",
-                        "done": True,
-                    },
-                }
-            )
-            return "HuggingFace API key is not set in the Valves."
-
+        event_emitter = __event_emitter__
+        await self._emit_status(
+            event_emitter, "in_progress", "Image generation started...", False
+        )
+        # Initialize client
         try:
-            formats = {
-                "default": (1024, 1024),
-                "square": (1024, 1024),
-                "landscape": (1024, 768),
-                "landscape_large": (1440, 1024),
-                "portrait": (768, 1024),
-                "portrait_large": (1024, 1440),
-            }
-
-            print(f"[DEBUG] Validating format: {image_format}")
-            if image_format not in formats:
-                raise ValueError(
-                    f"Invalid format. Must be one of: {', '.join(formats.keys())}"
-                )
-
-            width, height = formats[image_format]
-            print(f"[DEBUG] Using dimensions: {width}x{height}")
-
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": "Generating image", "done": False},
-                }
-            )
-
-            headers = {"Authorization": f"Bearer {self.valves.HF_API_KEY}"}
-            payload = {
-                "inputs": prompt,
-                "parameters": {"width": width, "height": height},
-            }
-
-            async with aiohttp.ClientSession(
-                timeout=ClientTimeout(total=600)
-            ) as session:
-                async with session.post(
-                    self.valves.HF_API_URL, headers=headers, json=payload
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        print(f"[DEBUG] API request failed: {error_text}")
-                        raise HFException(
-                            f"API request failed with status code {response.status}: {error_text}"
-                        )
-
-                    image_content = await response.read()
-
-            directory = os.path.join(CACHE_DIR, "image", "generations")
-            os.makedirs(directory, exist_ok=True)
-
-            filename = f"{uuid.uuid4()}.png"
-            save_path = os.path.join(directory, filename)
-
-            with open(save_path, "wb") as image_file:
-                image_file.write(image_content)
-            print(f"[DEBUG] Image saved to {save_path}")
-
-            image_url = f"/cache/image/generations/{filename}"
-
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": "Image generated", "done": True},
-                }
-            )
-
-            await __event_emitter__(
-                {
-                    "type": "message",
-                    "data": {
-                        "content": f"Generated image for prompt: '{prompt}'\n\n![Generated Image]({image_url})"
-                    },
-                }
-            )
-
-            return f"Notify the user that the image has been successfully generated for the prompt: '{prompt}' "
-
-        except aiohttp.ClientError as e:
-            error_msg = f"Network error occurred: {str(e)}"
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": error_msg, "done": True},
-                }
-            )
+            client = await self._get_client()
+        except ValueError as e:
+            error_msg = str(e)
+            await self._emit_status(event_emitter, "complete", f"Error: {error_msg}", True)
             return error_msg
 
-        except Exception as e:
-            print(f"[DEBUG] Unexpected error: {str(e)}")
-            error_msg = f"An error occurred: {str(e)}"
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": error_msg, "done": True},
-                }
+        # Set image dimensions
+        formats = {
+            "default": (1024, 1024),
+            "square": (1024, 1024),
+            "landscape": (1024, 768),
+            "landscape_large": (1440, 1024),
+            "portrait": (768, 1024),
+            "portrait_large": (1024, 1440),
+        }
+
+        if image_format not in formats:
+            error_msg = f"Invalid format. Must be one of: {', '.join(formats.keys())}"
+            await self._emit_status(event_emitter, "complete", error_msg, True)
+            return error_msg
+
+        width, height = formats[image_format]
+        model = model or self.valves.MODEL_NAME
+
+        try:
+            await self._emit_status(
+                event_emitter, "in_progress", "Generating image...", False
             )
+
+            # Generate the image
+            image = client.text_to_image(
+                prompt=prompt,
+                model=model,
+                width=width,
+                height=height
+            )
+            
+            # Convert image to base64
+            buffered = BytesIO()
+            image.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            
+            # Create a data URL for the image
+            image_url = f"data:image/png;base64,{img_str}"
+
+            await self._emit_status(
+                event_emitter, "complete", "Image generated successfully!", True
+            )
+            
+            # Return simple markdown with the image
+            return f"![{prompt}]({image_url})"
+
+        except Exception as e:
+            error_msg = f"Error generating image: {str(e)}"
+            if hasattr(e, 'response') and hasattr(e.response, 'text'):
+                error_msg += f" - {e.response.text}"
+            await self._emit_status(event_emitter, "complete", error_msg, True)
             return error_msg
