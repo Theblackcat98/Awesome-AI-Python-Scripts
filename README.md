@@ -67,6 +67,20 @@ The `Socratic Thinking` pipe for OpenWebUI implements a self-correction and refi
 
 ---
 
+## Standalone Projects
+
+Two formerly standalone repositories were merged into this one on 2026-10-20, with their full commit history preserved:
+
+### AgenticPipelineCreator — [`AgenticPipelineCreator/`](AgenticPipelineCreator/)
+
+Declarative JSON framework for orchestrating LLM and tool workflows without writing Python. See [`AgenticPipelineCreator/README.md`](AgenticPipelineCreator/README.md).
+
+### Website-Analyzer — [`Website-Analyzer/`](Website-Analyzer/)
+
+Clone and analyze a site, extract brand and business specs, and generate HTML summaries with a local LLM. See [`Website-Analyzer/README.md`](Website-Analyzer/README.md).
+
+---
+
 ## Future Enhancements
 
 This section will be updated to include a list of utility Python Scripts that use AI/LLMs.
